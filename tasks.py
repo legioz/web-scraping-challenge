@@ -7,7 +7,11 @@ from selenium.webdriver import FirefoxProfile
 from selenium.webdriver.firefox.options import Options
 import webdrivermanager
 import time
+import os
+from dotenv import load_dotenv
 
+
+load_dotenv()
 ROOT_DIR = Path(__file__).resolve(strict=True).parent
 OUTPUTDIR = ROOT_DIR.joinpath("output")
 browser_lib = Selenium()
@@ -89,8 +93,10 @@ def create_individual_investiments_excel(agency_investments):
 
 
 def get_agency():
-    # TODO: get agency name from file
-    return "Department of Agriculture"
+    agency_name = os.getenv("AGENCY_NAME")
+    if not agency_name:
+        raise Exception("Please provide an agency name in the .env file")
+    return agency_name
 
 
 def download_business_case_pdf(agency):
@@ -162,10 +168,10 @@ def scrapy_specific_agency(agency):
 
 def main():
     try:
+        agency = get_agency()
         open_website("https://itdashboard.gov/")
         agencies = get_agencies_spending()
         create_agencies_excel(agencies)
-        agency = get_agency()
         individual_investiments = scrapy_specific_agency(agency)
         create_individual_investiments_excel(individual_investiments)
         download_business_case_pdf(agency)

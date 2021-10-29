@@ -1,1 +1,2 @@
 rpaframework==11.5.1
+python-dotenv==0.19.1
