@@ -9,8 +9,7 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
-ROOT_DIR = Path(__file__).resolve(strict=True).parent
-OUTPUTDIR = ROOT_DIR.joinpath("output")
+OUTPUTDIR = Path("output")
 browser_lib = Selenium()
 
 
@@ -19,10 +18,11 @@ def open_website(url):
     driver.download_and_install("v0.30.0")
     mime_types = "application/pdf"
     options = browser_lib._get_driver_args("firefox")[0]["options"]
+    browser_lib.set_download_directory(OUTPUTDIR.__str__())
     options.set_preference("browser.download.folderList", 2)
     options.set_preference("browser.download.manager.showWhenStarting", False)
     options.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
-    options.set_preference("browser.download.dir", OUTPUTDIR.joinpath("pdf").__str__())
+    options.set_preference("browser.download.dir", OUTPUTDIR.resolve(strict=True).__str__())
     options.set_preference("pdfjs.disabled", True)
     options.set_preference("browser.link.open_newwindow", 3)
     options.set_preference("browser.link.open_newwindow.restriction", 0)
@@ -58,7 +58,7 @@ def get_agencies_spending():
 def create_agencies_excel(agencies):
     lib_files = Files()
     try:
-        lib_files.create_workbook(OUTPUTDIR.joinpath("agencies.xlsx"))
+        lib_files.create_workbook(OUTPUTDIR.joinpath("agencies.xlsx").__str__())
         lib_files.rename_worksheet("Sheet", "Agencies")
         lib_files.append_rows_to_worksheet(agencies)
         lib_files.save_workbook()
@@ -69,7 +69,7 @@ def create_agencies_excel(agencies):
 def create_individual_investiments_excel(agency_investments):
     lib_files = Files()
     try:
-        lib_files.open_workbook(OUTPUTDIR.joinpath("agencies.xlsx"))
+        lib_files.open_workbook(OUTPUTDIR.joinpath("agencies.xlsx").__str__())
         lib_files.create_worksheet("Individual Investiments", agency_investments)
         lib_files.save_workbook()
     finally:
@@ -83,8 +83,7 @@ def get_agency():
     return agency_name
 
 
-def download_business_case_pdf(agency):
-    browser_lib.set_download_directory(OUTPUTDIR.joinpath("pdf"))
+def download_business_case_pdf():
     download_urls = browser_lib.find_elements(
         "//div[@id='investments-table-object_wrapper']//tbody//tr//td[1]//a"
     )
@@ -99,7 +98,7 @@ def download_business_case_pdf(agency):
             "//div[@id='business-case-pdf']/a", timedelta(minutes=1)
         )
         browser_lib.find_element("//div[@id='business-case-pdf']/a").click()
-        while not OUTPUTDIR.joinpath("pdf").joinpath(filename).is_file():
+        while not OUTPUTDIR.joinpath(filename).is_file():
             time.sleep(1)
         browser_lib.close_window()
         browser_lib.switch_window("MAIN")
@@ -163,7 +162,7 @@ def main():
         individual_investiments = scrapy_specific_agency(agency)
         create_individual_investiments_excel(individual_investiments)
         print(" [x] agency individual investments sheet created")
-        download_business_case_pdf(agency)
+        download_business_case_pdf()
     finally:
         browser_lib.close_all_browsers()
 
