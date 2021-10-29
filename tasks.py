@@ -6,7 +6,6 @@ import webdrivermanager
 import time
 import os
 from dotenv import load_dotenv
-import shutil
 
 
 load_dotenv()
@@ -18,8 +17,6 @@ browser_lib = Selenium()
 def open_website(url):
     driver = webdrivermanager.GeckoDriverManager()
     driver.download_and_install("v0.30.0")
-    executable = driver.link_path.joinpath(driver.get_driver_filename()).__str__()
-    firefox_binary_location = shutil.which("firefox")
     mime_types = "application/pdf"
     options = browser_lib._get_driver_args("firefox")[0]["options"]
     options.set_preference("browser.download.folderList", 2)
@@ -31,8 +28,7 @@ def open_website(url):
     options.set_preference("browser.link.open_newwindow.restriction", 0)
     options.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
     options.set_preference("plugin.disable_full_page_plugin_for_types", mime_types)
-    options.binary = firefox_binary_location
-    browser_lib.open_browser(url, options=options, executable_path=executable)
+    browser_lib.open_browser(url, options=options)
 
 
 def get_agencies_elements(name=None):

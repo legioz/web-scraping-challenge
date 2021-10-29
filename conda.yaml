@@ -6,6 +6,8 @@ dependencies:
   - python=3.9.5
   # Adding pip itself as a conda package:
   - pip=21.3.1
+  - geckodriver
+  - firefox
   - pip:
       # Defining pip packages:
       - rpaframework==11.5.1
