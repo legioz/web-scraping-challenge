@@ -2,12 +2,11 @@ from pathlib import Path
 from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
 from datetime import timedelta
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 import webdrivermanager
 import time
 import os
 from dotenv import load_dotenv
+import shutil
 
 
 load_dotenv()
@@ -20,9 +19,9 @@ def open_website(url):
     driver = webdrivermanager.GeckoDriverManager()
     driver.download_and_install("v0.30.0")
     executable = driver.link_path.joinpath(driver.get_driver_filename()).__str__()
-    firefox_binary_location = FirefoxBinary().which("firefox")
+    firefox_binary_location = shutil.which("firefox")
     mime_types = "application/pdf"
-    options = Options()
+    options = browser_lib._get_driver_args("firefox")[0]["options"]
     options.set_preference("browser.download.folderList", 2)
     options.set_preference("browser.download.manager.showWhenStarting", False)
     options.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
