@@ -2,9 +2,8 @@ from pathlib import Path
 from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
 from datetime import timedelta
-from RPA.HTTP import HTTP
-from selenium.webdriver import FirefoxProfile
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 import webdrivermanager
 import time
 import os
@@ -21,17 +20,8 @@ def open_website(url):
     driver = webdrivermanager.GeckoDriverManager()
     driver.download_and_install("v0.30.0")
     executable = driver.link_path.joinpath(driver.get_driver_filename()).__str__()
-    profile = FirefoxProfile()
+    firefox_binary_location = FirefoxBinary().which("firefox")
     mime_types = "application/pdf"
-    profile.set_preference("browser.download.folderList", 2)
-    profile.set_preference("browser.download.manager.showWhenStarting", False)
-    profile.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
-    profile.set_preference("browser.download.dir", OUTPUTDIR.joinpath("pdf").__str__())
-    profile.set_preference("pdfjs.disabled", True)
-    profile.set_preference("browser.link.open_newwindow", 3)
-    profile.set_preference("browser.link.open_newwindow.restriction", 0)
-    profile.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
-    profile.set_preference("plugin.disable_full_page_plugin_for_types", mime_types)
     options = Options()
     options.set_preference("browser.download.folderList", 2)
     options.set_preference("browser.download.manager.showWhenStarting", False)
@@ -42,10 +32,8 @@ def open_website(url):
     options.set_preference("browser.link.open_newwindow.restriction", 0)
     options.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
     options.set_preference("plugin.disable_full_page_plugin_for_types", mime_types)
-    options.set_headless(True)
-    browser_lib.open_browser(
-        url, ff_profile_dir=profile, options=options, executable_path=executable
-    )
+    options.binary = firefox_binary_location
+    browser_lib.open_browser(url, options=options, executable_path=executable)
 
 
 def get_agencies_elements(name=None):
@@ -120,7 +108,9 @@ def download_business_case_pdf(agency):
             time.sleep(1)
         browser_lib.close_window()
         browser_lib.switch_window("MAIN")
-
+        print(f" [x] file {filename} downloaded")
+    time.sleep(1)
+    browser_lib.close_browser()
 
 def get_agency_specific_spending(agency):
     agency = get_agencies_elements(agency).click()
@@ -170,11 +160,14 @@ def scrapy_specific_agency(agency):
 def main():
     try:
         agency = get_agency()
+        print(" [x] agency found in environment")
         open_website("https://itdashboard.gov/")
         agencies = get_agencies_spending()
         create_agencies_excel(agencies)
+        print(" [x] agencies xlsx created")
         individual_investiments = scrapy_specific_agency(agency)
         create_individual_investiments_excel(individual_investiments)
+        print(" [x] agency individual investments sheet created")
         download_business_case_pdf(agency)
     finally:
         browser_lib.close_all_browsers()
