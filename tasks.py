@@ -2,16 +2,37 @@ from pathlib import Path
 from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
 from datetime import timedelta
+from RPA.HTTP import HTTP
+from selenium.webdriver import FirefoxProfile, Firefox
+import webdrivermanager
 
-
-OUTPUTDIR = Path(__file__).resolve(strict=True).parent.joinpath("output")
+ROOT_DIR = Path(__file__).resolve(strict=True).parent
+OUTPUTDIR = ROOT_DIR.joinpath("output")
 browser_lib = Selenium()
 
+
 def open_website(url):
-    browser_lib.open_available_browser(url)
+    driver = webdrivermanager.GeckoDriverManager()
+    driver.download_and_install("v0.30.0")
+    executable = driver.link_path.joinpath(driver.get_driver_filename()).__str__()
+    profile = FirefoxProfile()
+    mime_types = "application/pdf"
+    profile.set_preference("browser.download.folderList", 2)
+    profile.set_preference("browser.download.manager.showWhenStarting", False)
+    profile.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
+    profile.set_preference(
+        "browser.download.dir", OUTPUTDIR.resolve().joinpath("pdf").__str__()
+    )
+    profile.set_preference("pdfjs.disabled", True)
+    profile.set_preference("browser.link.open_newwindow", 3)
+    profile.set_preference("browser.link.open_newwindow.restriction", 0)
+    profile.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
+    profile.set_preference("plugin.disable_full_page_plugin_for_types", mime_types)
+    profile.update_preferences()
+    browser_lib.open_browser(url, ff_profile_dir=profile, executable_path=executable)
 
 
-def get_agencies_elements(name: str = None):
+def get_agencies_elements(name=None):
     if name is not None:
         agency = browser_lib.find_element(
             f"//div[@id='agency-tiles-widget']//span[text()='{name}']/.."
@@ -46,11 +67,11 @@ def create_agencies_excel(agencies):
         lib_files.close_workbook()
 
 
-def create_individual_investiments_excel(agency):
+def create_individual_investiments_excel(agency_investments):
     lib_files = Files()
     try:
         lib_files.open_workbook(OUTPUTDIR.joinpath("agencies.xlsx"))
-        lib_files.create_worksheet("Individual Investiments", agency)
+        lib_files.create_worksheet("Individual Investiments", agency_investments)
         lib_files.save_workbook()
     finally:
         lib_files.close_workbook()
@@ -62,10 +83,23 @@ def get_agency():
 
 
 def download_business_case_pdf(agency):
-    # TODO: 
-    pass
+    browser_lib.set_download_directory(OUTPUTDIR.joinpath("pdf"))
+    download_urls = browser_lib.find_elements(
+        "//div[@id='investments-table-object_wrapper']//tbody//tr//td[1]//a"
+    )
+    browser_lib.execute_javascript(
+        "Array.from(document.getElementsByTagName('a')).forEach((c)=>{c.target='_blank'})"
+    )
+    for url_id in download_urls:
+        url_id.click()
+        browser_lib.switch_window("NEW")
+        browser_lib.click_element_when_visible("//div[@id='business-case-pdf']/a")
+        browser_lib.close_window()
+        browser_lib.switch_window("MAIN")
+        break
 
-def scrapy_specific_agency(agency):
+
+def get_agency_specific_spending(agency):
     agency = get_agencies_elements(agency).click()
     browser_lib.wait_until_page_contains_element(
         "//div[@id='investments-table-object_length']/label/select",
@@ -75,6 +109,7 @@ def scrapy_specific_agency(agency):
         "//div[@id='investments-table-object_length']/label/select",
         timedelta(minutes=1),
     )
+    browser_lib.set_focus_to_element("//h4[text()='Individual Investments']")
     button_show_all_entries = browser_lib.find_element(
         "//div[@id='investments-table-object_length']/label/select/option[contains(text(),'All')]"
     )
@@ -88,9 +123,25 @@ def scrapy_specific_agency(agency):
         timedelta(minutes=1),
     )
     investments = browser_lib.find_elements(
-        "//div[@id='investments-table-object_wrapper']//tr//td"
+        "//div[@id='investments-table-object_wrapper']//tbody//tr//td"
     )
     return investments
+
+
+def scrapy_specific_agency(agency):
+    investments = get_agency_specific_spending(agency)
+    rows = []
+    row = []
+    count = 0
+    for td in investments:
+        if count < 6:
+            count += 1
+            row.append(td.text)
+        else:
+            count = 0
+            rows.append(row.copy())
+            row.clear()
+    return rows
 
 
 def main():
@@ -100,7 +151,8 @@ def main():
         create_agencies_excel(agencies)
         agency = get_agency()
         individual_investiments = scrapy_specific_agency(agency)
-        print(individual_investiments)
+        create_individual_investiments_excel(individual_investiments)
+        download_business_case_pdf(agency)
     finally:
         browser_lib.close_all_browsers()
 

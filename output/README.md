@@ -1,0 +1,1 @@
+This directory is dedicated for save files from web harvesting.

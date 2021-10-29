@@ -14,3 +14,12 @@ Your challenge is to automate the process of extracting data from [**itdashboard
 - If you reach 4 hours with tasks still remaining, please describe how in theory you would complete this challenge if more time was allowed.
 
 ### Running the Bot
+
+```sh
+echo "AGENCY_NAME='Department of Agriculture'" > ./.env
+python3 -m venv venv
+source venv/bin/activate
+pip install -U pip wheel setuptools
+pip install -r requirements.txt
+python3 tasks.py
+```
