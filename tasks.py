@@ -42,6 +42,7 @@ def open_website(url):
     options.set_preference("browser.link.open_newwindow.restriction", 0)
     options.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
     options.set_preference("plugin.disable_full_page_plugin_for_types", mime_types)
+    options.set_headless(True)
     browser_lib.open_browser(
         url, ff_profile_dir=profile, options=options, executable_path=executable
     )
