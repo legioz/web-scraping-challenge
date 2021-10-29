@@ -3,8 +3,10 @@ from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
 from datetime import timedelta
 from RPA.HTTP import HTTP
-from selenium.webdriver import FirefoxProfile, Firefox
+from selenium.webdriver import FirefoxProfile
+from selenium.webdriver.firefox.options import Options
 import webdrivermanager
+import time
 
 ROOT_DIR = Path(__file__).resolve(strict=True).parent
 OUTPUTDIR = ROOT_DIR.joinpath("output")
@@ -21,15 +23,26 @@ def open_website(url):
     profile.set_preference("browser.download.manager.showWhenStarting", False)
     profile.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
     profile.set_preference(
-        "browser.download.dir", OUTPUTDIR.resolve().joinpath("pdf").__str__()
+        "browser.download.dir", OUTPUTDIR.joinpath("pdf").__str__()
     )
     profile.set_preference("pdfjs.disabled", True)
     profile.set_preference("browser.link.open_newwindow", 3)
     profile.set_preference("browser.link.open_newwindow.restriction", 0)
     profile.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
     profile.set_preference("plugin.disable_full_page_plugin_for_types", mime_types)
-    profile.update_preferences()
-    browser_lib.open_browser(url, ff_profile_dir=profile, executable_path=executable)
+    options = Options()
+    options.set_preference("browser.download.folderList", 2)
+    options.set_preference("browser.download.manager.showWhenStarting", False)
+    options.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
+    options.set_preference(
+        "browser.download.dir", OUTPUTDIR.joinpath("pdf").__str__()
+    )
+    options.set_preference("pdfjs.disabled", True)
+    options.set_preference("browser.link.open_newwindow", 3)
+    options.set_preference("browser.link.open_newwindow.restriction", 0)
+    options.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
+    options.set_preference("plugin.disable_full_page_plugin_for_types", mime_types)
+    browser_lib.open_browser(url, ff_profile_dir=profile, options=options, executable_path=executable)
 
 
 def get_agencies_elements(name=None):
@@ -92,11 +105,14 @@ def download_business_case_pdf(agency):
     )
     for url_id in download_urls:
         url_id.click()
+        filename = f"{url_id.text}.pdf"
         browser_lib.switch_window("NEW")
-        browser_lib.click_element_when_visible("//div[@id='business-case-pdf']/a")
+        browser_lib.wait_until_element_is_visible("//div[@id='business-case-pdf']/a", timedelta(minutes=1))
+        browser_lib.find_element("//div[@id='business-case-pdf']/a").click()
+        while not OUTPUTDIR.joinpath("pdf").joinpath(filename).is_file():
+            time.sleep(1)
         browser_lib.close_window()
         browser_lib.switch_window("MAIN")
-        break
 
 
 def get_agency_specific_spending(agency):
