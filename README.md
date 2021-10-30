@@ -23,3 +23,4 @@ pip install -U pip wheel setuptools
 pip install -r requirements.txt
 python3 tasks.py
 ```
+![Peek 2021-10-29 23-18](https://user-images.githubusercontent.com/40257388/139517137-1f4591e6-36e8-4e9e-abbe-27cb14519390.gif)
