@@ -106,6 +106,7 @@ def download_business_case_pdf():
     time.sleep(1)
     browser_lib.close_browser()
 
+
 def get_agency_specific_spending(agency):
     agency = get_agencies_elements(agency).click()
     browser_lib.wait_until_page_contains_element(
