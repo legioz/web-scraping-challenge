@@ -14,21 +14,21 @@ browser_lib = Selenium()
 
 
 def open_website(url):
-    driver = webdrivermanager.GeckoDriverManager()
-    driver.download_and_install("v0.30.0")
-    mime_types = "application/pdf"
-    options = browser_lib._get_driver_args("firefox")[0]["options"]
+    driver = webdrivermanager.ChromeDriverManager()
+    driver.download_and_install("94.0.4606.61")
+    driver_path = Path(driver.link_path).joinpath(driver.driver_filenames.get(driver.get_os_name()))
+    options = browser_lib._get_driver_args("chrome")[0]["options"]
+    if driver.get_os_name() == "linux":
+        options.binary_location = "/usr/bin/chromium-browser"
     browser_lib.set_download_directory(OUTPUTDIR.__str__())
-    options.set_preference("browser.download.folderList", 2)
-    options.set_preference("browser.download.manager.showWhenStarting", False)
-    options.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
-    options.set_preference("browser.download.dir", OUTPUTDIR.resolve(strict=True).__str__())
-    options.set_preference("pdfjs.disabled", True)
-    options.set_preference("browser.link.open_newwindow", 3)
-    options.set_preference("browser.link.open_newwindow.restriction", 0)
-    options.set_preference("browser.helperApps.neverAsk.saveToDisk", mime_types)
-    options.set_preference("plugin.disable_full_page_plugin_for_types", mime_types)
-    browser_lib.open_browser(url, options=options)
+    prefs = {
+        "download.default_directory": OUTPUTDIR.resolve(strict=True).__str__(),
+        "download.directory_upgrade": True,
+        "download.prompt_for_download": False,
+        "plugins.always_open_pdf_externally": True,
+    }
+    options.add_experimental_option("prefs", prefs)
+    browser_lib.open_browser(url, browser="chrome", options=options, executable_path=driver_path)
 
 
 def get_agencies_elements(name=None):
