@@ -87,11 +87,9 @@ def download_business_case_pdf():
     download_urls = browser_lib.find_elements(
         "//div[@id='investments-table-object_wrapper']//tbody//tr//td[1]//a"
     )
-    browser_lib.execute_javascript(
-        "Array.from(document.getElementsByTagName('a')).forEach((c)=>{c.target='_blank'})"
-    )
     for url_id in download_urls:
-        url_id.click()
+        url = browser_lib.get_element_attribute(url_id, "href")
+        browser_lib.execute_javascript(f"window.open('{url}')")
         filename = f"{url_id.text}.pdf"
         browser_lib.switch_window("NEW")
         browser_lib.wait_until_element_is_visible(
